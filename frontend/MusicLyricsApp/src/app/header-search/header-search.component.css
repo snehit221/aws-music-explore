@@ -1,0 +1,79 @@
+.logo {
+    margin-left: 5px;
+    color: #fff;
+    /* Add this line to set the logo color */
+}
+
+.search-bar-v2 {
+    display: flex;
+    /* Use flexbox layout for search bar */
+    align-items: center;
+    /* Center items vertically */
+    margin: 10px 20px;
+    /* Add margin around search bar */
+    flex: 1;
+    /* Make the search bar take up remaining space on larger screens */
+}
+
+
+.search-input::placeholder {
+    color: #fff;
+    /* Placeholder text color */
+}
+
+.search-button {
+    margin-left: 8px;
+    /* Add space between input and button */
+    background-color: transparent;
+    /* Transparent background */
+    color: #fff;
+    /* Text color */
+    border: none;
+    /* Remove border */
+    cursor: pointer;
+    /* Add cursor pointer */
+    margin-right: 100px;
+}
+
+.mat-icon-button {
+    margin-right: 500px;
+}
+
+.custom-search-input {
+    width: 100%;
+    /* Expand search bar on larger screens */
+    height: 30px;
+    /* Increase the height of the search bar */
+    padding: 0 10px;
+    /* Add padding to adjust the width */
+}
+
+/* Define styles for larger screens */
+@media screen and (min-width: 768px) {
+    .search-bar-v2 {
+        margin: 10px 20px;
+    }
+
+    .search-button {
+        margin-right: 20px;
+        /* Adjust margin for button */
+    }
+}
+
+/* Define styles for smaller screens */
+@media screen and (max-width: 767px) {
+    .search-bar-v2 {
+        margin: 10px;
+        /* Reduce margin for search bar */
+    }
+
+    .search-button {
+        margin-right: 10px;
+        /* Adjust margin for button */
+    }
+
+    .mat-icon-button {
+        margin-right: 10px;
+        /* Adjust margin for mat icon button */
+    }
+}

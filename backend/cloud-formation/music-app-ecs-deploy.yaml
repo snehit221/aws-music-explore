@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: All ECS and ECR infra for deploying front end
+
+Resources:
+  MusicTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: music-td-fm
+      Cpu: '1024'
+      Memory: '2048'
+      ExecutionRoleArn: arn:aws:iam::590183982112:role/LabRole
+      TaskRoleArn: arn:aws:iam::590183982112:role/LabRole
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ContainerDefinitions:
+        - Name: music-app-container
+          Image: 590183982112.dkr.ecr.us-east-1.amazonaws.com/music-app:latest
+          Essential: true
+          PortMappings:
+            - ContainerPort: 80
+
+  MusicCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: music-cluster
+
+  MusicService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref MusicCluster
+      ServiceName: music-app-service
+      TaskDefinition: !Ref MusicTaskDefinition
+      LaunchType: FARGATE
+      DesiredCount: 1
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets: !Split [",", !ImportValue MusicAppSubnetIds]
+          SecurityGroups: [!ImportValue MusicServiceSecurityGroupId]

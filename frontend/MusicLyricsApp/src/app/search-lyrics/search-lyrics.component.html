@@ -1,0 +1,20 @@
+<div class="song-details-container">
+    <div class="image-details">
+        <img [src]="songDetail?.song_art_image_thumbnail_url" alt="Song Image" class="song-image">
+    </div>
+    <div class="song-details">
+        <h2 class="song-name">{{ songDetail?.song_title }}</h2>
+        <h3 class="artist-name">{{ songDetail?.artist_names }}</h3>
+        <p class="release-date">{{ songDetail?.release_date_for_display }}</p>
+        <div class="action-buttons">
+            <button *ngIf="songDetail?.youtube_watch_url" class="button-watch" (click)="watchOnYouTube()">Watch on YouTube</button>
+            <button *ngIf="songDetail?.apple_music_player_url" class="button-preview" (click)="listenPreview()">Listen Preview</button>
+        </div>
+    </div>
+</div>
+<div class="lyrics">
+    <pre>
+        {{ songDetail?.song_lyrics }}
+    </pre>
+</div>
+

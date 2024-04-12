@@ -1,0 +1,78 @@
+.song-details-container {
+    display: flex;
+    align-items: flex-start;
+}
+
+.image-details {
+    margin-top: 50px;
+    margin-right: 20px;
+}
+
+.song-image {
+    width: 250px; /* Adjust width as needed */
+    height: auto;
+}
+
+.song-details {
+    margin-top: 140px;
+    display: flex;
+    flex-direction: column;
+}
+
+.song-name, .artist-name, .release-date {
+    margin: 5px 0; /* Adjust vertical margin as needed */
+    text-align: center;
+}
+
+.song-name {
+    text-align: center;
+}
+
+.artist-name {
+    color: red;
+    text-align: center;
+}
+
+.release-date {
+    color: grey;
+    text-align: center;
+}
+
+.lyrics {
+    flex: 1;
+}
+
+.lyrics h3 {
+    margin-top: 0;
+}
+
+.lyrics pre {
+    white-space: pre-wrap;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px; /* Adjust as needed */
+}
+
+.action-buttons button {
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px; /* Rounded edges */
+}
+
+.action-buttons button:hover {
+    background-color: darkred;
+}
+
+.button-watch {
+    margin-right: 5px;
+}
+
+.button-preview {
+    margin-left: 5px;
+}

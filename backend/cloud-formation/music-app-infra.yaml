@@ -1,0 +1,417 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: All Infra for Music App
+
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyInternetGateway
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref MyInternetGateway
+
+  MyPublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: MyPublicSubnet1
+
+  MyPublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: MyPublicSubnet2
+
+  MyPrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 10.0.3.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: MyPrivateSubnet1
+
+  MyPrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: 10.0.4.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: MyPrivateSubnet2
+
+  MyPublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: Name
+          Value: MyPublicRouteTable
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref MyPublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref MyInternetGateway
+
+  MyPrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: Name
+          Value: MyPrivateRouteTable
+
+  NatEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  MyNatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEIP.AllocationId
+      SubnetId: !Ref MyPublicSubnet1
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref MyPrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref MyNatGateway
+  
+  VpcSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: VpcSg
+      GroupDescription: Security Group for VPC
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          CidrIp: 0.0.0.0/0
+          Description: Allow Redis connection from Lambda
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: Allow HTTP traffic
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: Allow HTTPS traffic
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+ 
+  MyPublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MyPublicSubnet1
+      RouteTableId: !Ref MyPublicRouteTable
+
+  MyPublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MyPublicSubnet2
+      RouteTableId: !Ref MyPublicRouteTable
+
+  MyPrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MyPrivateSubnet1
+      RouteTableId: !Ref MyPrivateRouteTable
+
+  MyPrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MyPrivateSubnet2
+      RouteTableId: !Ref MyPrivateRouteTable
+
+  #creating dynamo db
+  SongInfoTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: song_info
+      AttributeDefinitions:
+        - AttributeName: song_id
+          AttributeType: N
+      KeySchema:
+        - AttributeName: song_id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  # SQS Queue
+  SongInfoQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: SongInfo
+      VisibilityTimeout: 60
+
+  # Redis Elasticache Subnet Group
+  RedisSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: Subnet group for Redis ElastiCache
+      SubnetIds:
+        - !Ref MyPrivateSubnet1
+        - !Ref MyPrivateSubnet2
+
+  # Redis Elasticache Instance
+  MyRedisCluster:
+    Type: AWS::ElastiCache::ReplicationGroup
+    Properties:
+      ReplicationGroupId: my-clustered-redis
+      CacheNodeType: cache.t4g.micro
+      Engine: redis
+      EngineVersion: 7.1
+      NumNodeGroups: 1
+      ReplicasPerNodeGroup: 0
+      AutomaticFailoverEnabled: false
+      ReplicationGroupDescription: This my redis elastiCache
+      CacheSubnetGroupName: !Ref RedisSubnetGroup
+      SecurityGroupIds:
+        - !Ref VpcSg   
+
+  #Sender lambda function defined
+  MyLambdaLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: my-music-layer
+      Content:
+        S3Bucket: appmusicbucket
+        S3Key: python.zip
+      CompatibleRuntimes:
+        - python3.11
+
+  MyLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: lambda_send_request_function
+      Handler: lambda_send_request_function.lambda_handler  
+      Runtime: python3.11 
+      Environment:
+        Variables:
+          REDIS_ENDPOINT: !GetAtt MyRedisCluster.PrimaryEndPoint.Address
+          SQS_QUEUE_URL: !GetAtt SongInfoQueue.QueueUrl 
+      Timeout: 37
+      Layers:
+        - !Ref MyLambdaLayer
+      Code:
+        S3Bucket: appmusicbucket
+        S3Key: lambda_send_request_function.zip
+
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref VpcSg 
+        SubnetIds:
+          - !Ref MyPrivateSubnet1
+          - !Ref MyPrivateSubnet2  
+      Role: arn:aws:iam::590183982112:role/LabRole
+  
+  MyLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt MyLambdaFunction.Arn
+      Principal: apigateway.amazonaws.com
+
+  #Receiver lambda function processing SQS Queue
+  MyLambdaFunctionReceiver:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: lambda_receiver_sqs_function
+      Handler: receiver_lambda_data_enrich.lambda_handler  
+      Runtime: python3.11
+      Timeout: 37
+      Layers:
+        - !Ref MyLambdaLayer
+      Code:
+        S3Bucket: appmusicbucket
+        S3Key: receiver_lambda_data_enrich.zip
+        
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref VpcSg 
+        SubnetIds:
+          - !Ref MyPrivateSubnet1
+          - !Ref MyPrivateSubnet2  
+      Role: arn:aws:iam::590183982112:role/LabRole
+  
+  # attach SQS event trigger to lambda 
+  MyEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 1
+      Enabled: true
+      EventSourceArn: !GetAtt SongInfoQueue.Arn
+      FunctionName: !GetAtt MyLambdaFunctionReceiver.Arn
+
+  # Recommend Songs lambda function defined
+  MyLambdaFunctionRecommend:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: lambda_recommend_songs_function
+      Handler: recommend_songs.lambda_handler  
+      Runtime: python3.11
+      Timeout: 37
+      Layers:
+        - !Ref MyLambdaLayer
+      Code:
+        S3Bucket: appmusicbucket
+        S3Key: recommend_songs.zip
+        
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref VpcSg 
+        SubnetIds:
+          - !Ref MyPrivateSubnet1
+          - !Ref MyPrivateSubnet2  
+      Role: arn:aws:iam::590183982112:role/LabRole
+
+  MyLambdaPermissionRecommend:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt MyLambdaFunctionRecommend.Arn
+      Principal: apigateway.amazonaws.com
+
+  # API Gateway parts
+  MyApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: MyMusicAPI
+
+  ApiGatewayResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref MyApiGateway
+      ParentId: !GetAtt MyApiGateway.RootResourceId
+      PathPart: "song-details"
+
+  ApiGatewayMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId: !Ref ApiGatewayResource
+      RestApiId: !Ref MyApiGateway
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations
+          - LambdaArn: !GetAtt MyLambdaFunction.Arn
+
+  ApiGatewayResourceRecommend:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref MyApiGateway
+      ParentId: !GetAtt MyApiGateway.RootResourceId
+      PathPart: "recommend-songs"
+  
+  ApiGatewayMethodRecommend:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId: !Ref ApiGatewayResourceRecommend
+      RestApiId: !Ref MyApiGateway
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations
+          - LambdaArn: !GetAtt MyLambdaFunctionRecommend.Arn
+
+  MyApiGatewayOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref MyApiGateway
+      ResourceId: !GetAtt MyApiGateway.RootResourceId
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'*'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: {}
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+            
+  ApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: 
+      - ApiGatewayMethod
+      - ApiGatewayMethodRecommend
+    Properties:
+      RestApiId: !Ref MyApiGateway
+
+  ApiGatewayStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      DeploymentId: !Ref ApiGatewayDeployment
+      RestApiId: !Ref MyApiGateway
+      StageName: prod
+  
+
+Outputs:
+  ApiGatewayUrl:
+    Description: API Gateway URL
+    Value: !Sub "https://${MyApiGateway}.execute-api.us-east-1.amazonaws.com/${ApiGatewayStage}"
+  ElastiCacheEndpoint:
+    Description: ElastiCache Cluster Config Endpoint
+    Value: !GetAtt MyRedisCluster.PrimaryEndPoint.Address
+
+  MusicAppSubnetIds:
+    Description: Subnet IDs for the MusicService ECS service
+    Value: !Join [",", [!Ref MyPublicSubnet1, !Ref MyPublicSubnet2]]  # my subnet ids
+    Export:
+      Name: MusicAppSubnetIds
+
+  MusicServiceSecurityGroupId:
+    Description: Security Group ID for the MusicService ECS service
+    Value: !Ref VpcSg  # logical name of my security group
+    Export:
+      Name: MusicServiceSecurityGroupId

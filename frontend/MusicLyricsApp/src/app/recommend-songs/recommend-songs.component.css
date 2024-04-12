@@ -1,0 +1,88 @@
+/* Style for the song container */
+
+.song-container-v2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  /* Automatically fit as many products as possible per row with a minimum width of 200px */
+  gap: 20px;
+  /* Gap between products */
+}
+
+.song-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+/* Style for the song image */
+.song-image {
+  width: 100%;
+  max-width: 200px;
+  /* Adjust the maximum width as needed */
+  height: auto;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+/* Style for the song title */
+.song-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+/* Style for the artist names */
+.artist-names {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.action-buttons {
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  padding: 5px 10px;
+}
+
+/* Responsive styles */
+@media only screen and (max-width: 768px) {
+  .song-container {
+    padding: 5px;
+    /* Reduce padding on smaller screens */
+    margin: 10px;
+    /* Add margin around each song container on smaller screens */
+  }
+
+  .song-title,
+  .artist-names {
+    font-size: 16px;
+    /* Decrease font size on smaller screens */
+  }
+
+  .action-buttons {
+    padding: 4px 8px;
+    /* Decrease padding on smaller screens */
+  }
+
+  .mat-grid-list {
+    display: block;
+    /* Change display to block for mobile view */
+    margin: 0 auto;
+    /* Center the grid list on smaller screens */
+    max-width: 400px;
+    /* Set maximum width for the grid list */
+  }
+
+  .mat-grid-tile {
+    width: 100%;
+    /* Set each tile to take up full width on smaller screens */
+    margin-bottom: 10px;
+    /* Add margin at the bottom of each tile */
+  }
+}

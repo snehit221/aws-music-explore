@@ -1,0 +1,15 @@
+<mat-toolbar class="custom-toolbar">
+  <mat-toolbar-row>
+    <a href="/" class="logo"> <!-- Add anchor tag with href attribute -->
+      <h1><b>Explore Music</b></h1>
+    </a>
+
+        <div class="search-bar-v2">
+          <input type="text" class= "custom-search-input" placeholder="Enter Song Name For Music Lyrics..." [(ngModel)]="searchText" (keydown.enter)="search()">
+          <button class = "mat-icon-button" (click)="search()">
+            <mat-icon>search</mat-icon>
+          </button>
+        </div>
+        
+    </mat-toolbar-row>
+</mat-toolbar>

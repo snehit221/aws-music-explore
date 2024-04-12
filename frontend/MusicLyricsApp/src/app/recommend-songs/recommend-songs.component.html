@@ -1,0 +1,34 @@
+<h2 class="recommended-title">Discover Your Next Favorite Songs</h2>
+<p>Explore new music and find hidden gems tailored just for you. Whether you're searching by name or letting the magic
+  of discovery guide you, this section will be filled with your past favorites and exciting recommendations.</p>
+<div *ngIf="recommendedSongs && recommendedSongs.length > 0">
+  <h2> Recent Songs </h2>
+
+  <div class="song-container-v2">
+    <div *ngFor="let song of recommendedSongs" class="song-details">
+      <a [href]="song.apple_music_player_url" target="_blank">
+        <img [src]="song.song_art_image_url" alt="Song Image" class="song-image">
+        <div class="song-title">{{ song.song_title }}</div>
+      </a>
+      <div class="artist-names">{{ song.artist_names }}</div>
+      <button class="action-buttons" (click)="song.youtube_watch_url && navigateToYouTube(song.youtube_watch_url)">Watch
+        on YouTube</button>
+    </div>
+  </div>
+
+
+  <!-- <mat-grid-list cols="4" gutterSize="80px">
+  <mat-grid-tile *ngFor="let song of recommendedSongs">
+    <div class="song-container-v2">
+      <a [href]="song.apple_music_player_url" target="_blank">
+      <img [src]="song.song_art_image_url" alt="Song Image" class="song-image">
+      <div class="song-title">{{ song.song_title }}</div>
+      </a>
+      <div class="artist-names">{{ song.artist_names }}</div>
+      <button class="action-buttons" (click)="song.youtube_watch_url && navigateToYouTube(song.youtube_watch_url)">Watch on YouTube</button>
+    </div>
+  </mat-grid-tile>
+</mat-grid-list> -->
+
+
+</div>
