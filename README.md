@@ -8,6 +8,8 @@ Music Explore is an innovative cloud-native service that enables users to discov
 
 In today’s world, music enthusiasts are constantly seeking innovative platforms that facilitate seamless exploration and discovery of their favorite tunes. Music Explore aims to bring a personalized touch to the user experience by leveraging advanced cloud-native technologies. By caching frequently searched song queries and enriching song data with dynamic content, Music Explore offers a unique and engaging music discovery experience.
 
+[Watch the Demo](https://drive.google.com/file/d/1PRhCotaE_aTnaTjU5phF7XRMoXBykRIF/view?usp=drive_link) 
+
 ## Cloud Native Project Architecture:
 
 ![Architecture Diagram](architecture.png)
