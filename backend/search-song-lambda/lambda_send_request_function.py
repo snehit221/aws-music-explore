@@ -176,7 +176,7 @@ def fetch_song_details(songName):
 
     print(params)
 
-    access_token = "_bxXBsZfiQD-_Wp-Ghn6g-tEGjkujluJqf8Ponf_dgCObc5ThcyrEYTjljx69i7x"
+    access_token = "XXXX"
 
     headers = {'Authorization': 'Bearer ' + access_token}
     try:
